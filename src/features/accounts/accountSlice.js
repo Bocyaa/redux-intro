@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   balance: 0,
@@ -7,14 +7,27 @@ const initialState = {
   isLoading: false,
 };
 
+export const deposit = createAsyncThunk(
+  'account/deposit',
+  async ({ amount, currency }, { rejectWithValue }) => {
+    if (currency === 'USD') return amount;
+
+    try {
+      const res = await fetch(
+        `https://api.frankfurter.dev/v1/latest?amount=${amount}&from=${currency}&to=USD`
+      );
+      const data = await res.json();
+      return data.rates.USD; // This becomes the payload
+    } catch {
+      return rejectWithValue('Failed to convert currency');
+    }
+  }
+);
+
 const accountSlice = createSlice({
   name: 'account',
   initialState,
   reducers: {
-    deposit(state, action) {
-      state.balance += action.payload;
-      state.isLoading = false;
-    },
     withdraw(state, action) {
       state.balance -= action.payload;
     },
@@ -38,28 +51,22 @@ const accountSlice = createSlice({
       state.loan = 0;
       state.loanPurpose = '';
     },
-    convertingCurrency(state) {
-      state.isLoading = true;
+    extraReducers: (builder) => {
+      builder
+        .addCase(deposit.pending, (state) => {
+          state.isLoading = true;
+        })
+        .addCase(deposit.fulfilled, (state, action) => {
+          state.balance += action.payload;
+          state.isLoading = false;
+        })
+        .addCase(deposit.rejected, (state) => {
+          state.isLoading = false;
+        });
     },
   },
 });
 
 export const { withdraw, requestLoan, payLoan } = accountSlice.actions;
-
-export function deposit(amount, currency) {
-  if (currency === 'USD') return { type: 'account/deposit', payload: amount };
-
-  return async function (dispatch) {
-    dispatch({ type: 'account/convertingCurrency' });
-
-    const res = await fetch(
-      `https://api.frankfurter.dev/v1/latest?amount=${amount}&from=${currency}&to=USD`
-    );
-    const data = await res.json();
-    const converted = data.rates.USD;
-
-    dispatch({ type: 'account/deposit', payload: converted });
-  };
-}
 
 export default accountSlice.reducer;
