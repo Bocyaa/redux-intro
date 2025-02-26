@@ -51,19 +51,22 @@ const accountSlice = createSlice({
       state.loan = 0;
       state.loanPurpose = '';
     },
-    extraReducers: (builder) => {
-      builder
-        .addCase(deposit.pending, (state) => {
-          state.isLoading = true;
-        })
-        .addCase(deposit.fulfilled, (state, action) => {
-          state.balance += action.payload;
-          state.isLoading = false;
-        })
-        .addCase(deposit.rejected, (state) => {
-          state.isLoading = false;
-        });
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(deposit.pending, (state) => {
+        console.log('Deposit action pending...');
+        state.isLoading = true;
+      })
+      .addCase(deposit.fulfilled, (state, action) => {
+        console.log('Deposit successful:', action.payload);
+        state.balance += action.payload;
+        state.isLoading = false;
+      })
+      .addCase(deposit.rejected, (state, action) => {
+        console.log('Deposit failed:', action.error);
+        state.isLoading = false;
+      });
   },
 });
 

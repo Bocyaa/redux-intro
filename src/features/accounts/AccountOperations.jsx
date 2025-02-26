@@ -22,7 +22,11 @@ function AccountOperations() {
   function handleDeposit() {
     if (!depositAmount) return;
 
-    dispatch(deposit(depositAmount, currency));
+    console.log('Dispatching depsit:', {
+      amount: Number(depositAmount),
+      currency,
+    });
+    dispatch(deposit({ amount: depositAmount, currency: currency }));
 
     setDepositAmount('');
     setCurrency('USD');
